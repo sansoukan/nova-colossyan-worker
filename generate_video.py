@@ -21,15 +21,15 @@ bucket = "nova-videos"
 filename = f"{QUESTION_UUID}_fr_question.mp4"
 local_path = f"/tmp/{filename}"
 
-# Fetch question
+# Récupération question
 print(f"🔍 Fetching question {QUESTION_UUID}...")
 data = supabase.table("nova_questions").select("*").eq("id", QUESTION_UUID).single().execute()
 question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Send to Colossyan (CORRECT API endpoint)
-print("🎬 Sending to Colossyan /api.v1 endpoint...")
+# Envoi à Colossyan API v1
+print("🎬 Sending to Colossyan API v1...")
 url = "https://api.colossyan.com/v1/video-generation/generate"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
@@ -43,7 +43,7 @@ payload = {
     "config": { "resolution": "720p", "subtitles": False }
 }
 response = requests.post(url, headers=headers, json=payload)
-print("📦 Status:", response.status_code)
+print("📦 Colossyan status:", response.status_code)
 print("📦 Response:", response.text)
 response.raise_for_status()
 res_json = response.json()
@@ -52,7 +52,7 @@ if not video_id:
     raise Exception("❌ No video_id returned by Colossyan.")
 print(f"✅ Video ID: {video_id}")
 
-# Wait for video
+# Attente de la vidéo
 print("⏳ Waiting for video...")
 status_url = f"https://api.colossyan.com/v1/video-generation/{video_id}"
 while True:
@@ -66,7 +66,7 @@ while True:
         raise Exception("❌ Video generation failed.")
     time.sleep(5)
 
-# Download
+# Téléchargement
 print("⬇️ Downloading...")
 video_data = requests.get(video_url)
 with open(local_path, "wb") as f:
@@ -77,7 +77,7 @@ print("☁️ Uploading to Supabase...")
 with open(local_path, "rb") as f:
     supabase.storage.from_(bucket).upload(path=filename, file=f, file_options={"upsert": True})
 
-# Update row
+# Mise à jour table
 public_url = f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{filename}"
 supabase.table("nova_questions").update({ "video_question_fr": public_url }).eq("id", QUESTION_UUID).execute()
-print(f"✅ Video uploaded and updated in Supabase for {QUESTION_UUID}")
+print(f"✅ Video uploaded and saved for {QUESTION_UUID}")
