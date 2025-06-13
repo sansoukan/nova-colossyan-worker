@@ -28,8 +28,8 @@ question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Appel Colossyan (nouveau endpoint officiel)
-print("🎬 Sending to Colossyan (official endpoint)...")
+# Appel Colossyan (champ videoCreative ajouté)
+print("🎬 Sending to Colossyan with required videoCreative field...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
@@ -41,15 +41,17 @@ payload = {
         "type": "text",
         "input": text_fr
     },
-    "avatar": {
-        "name": "nova_avatar"
-    },
-    "voice": {
-        "id": "0e051caf8e0947a18870ee24bbbfce36"
-    },
-    "config": {
-        "resolution": "720p",
-        "subtitles": False
+    "videoCreative": {
+        "avatar": {
+            "name": "nova_avatar"
+        },
+        "voice": {
+            "id": "0e051caf8e0947a18870ee24bbbfce36"
+        },
+        "config": {
+            "resolution": "720p",
+            "subtitles": False
+        }
     }
 }
 response = requests.post(url, headers=headers, json=payload)
