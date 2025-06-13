@@ -8,45 +8,48 @@ load_dotenv()
 
 COLOSSYAN_API_KEY = os.getenv("COLOSSYAN_API_KEY")
 if not COLOSSYAN_API_KEY:
-    raise Exception("❌ Missing COLOSSYAN_API_KEY in environment.")
+    raise Exception("❌ COLOSSYAN_API_KEY is missing.")
 
-# Texte de test
-text_fr = "Bonjour, je suis Nova. Ceci est un test de génération vidéo automatique."
+text_fr = "Bonjour, je suis Nova. Ceci est un test avec la structure scènes."
 
-print("🎬 Sending test video request to Colossyan...")
+print("🎬 Sending to Colossyan using scenes structure...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
     "Content-Type": "application/json"
 }
 payload = {
-    "title": "Nova - Test",
+    "title": "Nova Scene Test",
     "script": {
         "type": "text",
         "input": text_fr
     },
     "videoCreative": {
-        "avatar": {
-            "name": "nova_avatar"
-        },
-        "voice": {
-            "id": "0e051caf8e0947a18870ee24bbbfce36"
-        },
-        "background": {
-            "color": "#ffffff"
-        },
-        "settings": {
-            "name": "nova-default",
-            "resolution": "720p",
-            "subtitles": False,
-            "videoLayout": "face",
-            "padding": "none",
-            "videoSize": {
-                "type": "square",
-                "width": 1080,
-                "height": 1080
+        "scenes": [
+            {
+                "avatar": {
+                    "name": "nova_avatar"
+                },
+                "voice": {
+                    "id": "0e051caf8e0947a18870ee24bbbfce36"
+                },
+                "background": {
+                    "color": "#ffffff"
+                },
+                "settings": {
+                    "name": "nova-default",
+                    "resolution": "720p",
+                    "subtitles": False,
+                    "videoLayout": "face",
+                    "padding": "none",
+                    "videoSize": {
+                        "type": "square",
+                        "width": 1080,
+                        "height": 1080
+                    }
+                }
             }
-        }
+        ]
     }
 }
 
@@ -55,10 +58,10 @@ print("📦 Status Code:", response.status_code)
 print("📦 Response:", response.text)
 response.raise_for_status()
 
-video_id = response.json().get("id")
+res_json = response.json()
+video_id = res_json.get("id")
 if not video_id:
     raise Exception("❌ No video ID returned.")
-
 print(f"✅ Video Job ID: {video_id}")
 
 # Attente
@@ -69,7 +72,7 @@ while True:
     print("📡 Status:", status_res)
     if status_res.get("status") == "done":
         video_url = status_res.get("download_url")
-        print(f"🎉 Test Video Ready: {video_url}")
+        print(f"🎉 Video ready: {video_url}")
         break
     elif status_res.get("status") == "failed":
         raise Exception("❌ Video generation failed.")
