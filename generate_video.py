@@ -10,21 +10,36 @@ COLOSSYAN_API_KEY = os.getenv("COLOSSYAN_API_KEY")
 if not COLOSSYAN_API_KEY:
     raise Exception("❌ COLOSSYAN_API_KEY is missing.")
 
-text_fr = "Bonjour, je suis Nova. Ceci est un test avec la structure scènes."
+text_fr = "Bonjour, je suis Nova. Ceci est un test avec la structure scenes + settings global."
 
-print("🎬 Sending to Colossyan using scenes structure...")
+print("🎬 Sending to Colossyan with dual settings structure...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
     "Content-Type": "application/json"
 }
+
+settings_block = {
+    "name": "nova-default",
+    "resolution": "720p",
+    "subtitles": False,
+    "videoLayout": "face",
+    "padding": "none",
+    "videoSize": {
+        "type": "square",
+        "width": 1080,
+        "height": 1080
+    }
+}
+
 payload = {
-    "title": "Nova Scene Test",
+    "title": "Nova - Test Dual Settings",
     "script": {
         "type": "text",
         "input": text_fr
     },
     "videoCreative": {
+        "settings": settings_block,  # GLOBAL
         "scenes": [
             {
                 "avatar": {
@@ -36,18 +51,7 @@ payload = {
                 "background": {
                     "color": "#ffffff"
                 },
-                "settings": {
-                    "name": "nova-default",
-                    "resolution": "720p",
-                    "subtitles": False,
-                    "videoLayout": "face",
-                    "padding": "none",
-                    "videoSize": {
-                        "type": "square",
-                        "width": 1080,
-                        "height": 1080
-                    }
-                }
+                "settings": settings_block  # PER SCENE
             }
         ]
     }
