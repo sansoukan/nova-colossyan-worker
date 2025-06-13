@@ -28,13 +28,14 @@ question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Appel Colossyan (champ videoCreative ajouté)
-print("🎬 Sending to Colossyan with required videoCreative field...")
+# Envoi à Colossyan (payload complet façon Studio)
+print("🎬 Sending to Colossyan (Studio-style payload)...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
     "Content-Type": "application/json"
 }
+
 payload = {
     "title": f"Nova - {QUESTION_UUID}",
     "script": {
@@ -48,30 +49,39 @@ payload = {
         "voice": {
             "id": "0e051caf8e0947a18870ee24bbbfce36"
         },
+        "background": {
+            "color": "#ffffff"
+        },
         "config": {
             "resolution": "720p",
-            "subtitles": False
+            "subtitles": False,
+            "videoLayout": "face",
+            "padding": "none"
         }
     }
 }
+
 response = requests.post(url, headers=headers, json=payload)
-print("📦 Colossyan response status:", response.status_code)
-print("📦 Response:", response.text)
+print("📦 Status Code:", response.status_code)
+print("📦 Full Response Text:")
+print(response.text)
 response.raise_for_status()
+
 res_json = response.json()
 video_id = res_json.get("id")
 if not video_id:
     raise Exception("❌ No video ID returned from Colossyan.")
+
 print(f"✅ Video Job ID: {video_id}")
 
-# Vérification de l'état
-print("⏳ Waiting for video to be ready...")
+# Suivi du job
+print("⏳ Waiting for video...")
 status_url = f"https://app.colossyan.com/api/v1/video-generation-jobs/{video_id}"
 while True:
     status_res = requests.get(status_url, headers=headers).json()
     print("📡 Status:", status_res)
     if status_res.get("status") == "done":
-        video_url = status_res["download_url"]
+        video_url = status_res.get("download_url")
         print(f"🎉 Video ready: {video_url}")
         break
     elif status_res.get("status") == "failed":
