@@ -21,45 +21,55 @@ bucket = "nova-videos"
 filename = f"{QUESTION_UUID}_fr_question.mp4"
 local_path = f"/tmp/{filename}"
 
-# Récupération question
+# Récupération de la question
 print(f"🔍 Fetching question {QUESTION_UUID}...")
 data = supabase.table("nova_questions").select("*").eq("id", QUESTION_UUID).single().execute()
 question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Envoi à Colossyan API v1
-print("🎬 Sending to Colossyan API v1...")
-url = "https://api.colossyan.com/v1/video-generation/generate"
+# Appel Colossyan (nouveau endpoint officiel)
+print("🎬 Sending to Colossyan (official endpoint)...")
+url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
     "Content-Type": "application/json"
 }
 payload = {
     "title": f"Nova - {QUESTION_UUID}",
-    "script": { "type": "text", "input": text_fr },
-    "avatar": { "name": "nova_avatar" },
-    "voice": { "id": "0e051caf8e0947a18870ee24bbbfce36" },
-    "config": { "resolution": "720p", "subtitles": False }
+    "script": {
+        "type": "text",
+        "input": text_fr
+    },
+    "avatar": {
+        "name": "nova_avatar"
+    },
+    "voice": {
+        "id": "0e051caf8e0947a18870ee24bbbfce36"
+    },
+    "config": {
+        "resolution": "720p",
+        "subtitles": False
+    }
 }
 response = requests.post(url, headers=headers, json=payload)
-print("📦 Colossyan status:", response.status_code)
+print("📦 Colossyan response status:", response.status_code)
 print("📦 Response:", response.text)
 response.raise_for_status()
 res_json = response.json()
-video_id = res_json.get("video_id") or res_json.get("id")
+video_id = res_json.get("id")
 if not video_id:
-    raise Exception("❌ No video_id returned by Colossyan.")
-print(f"✅ Video ID: {video_id}")
+    raise Exception("❌ No video ID returned from Colossyan.")
+print(f"✅ Video Job ID: {video_id}")
 
-# Attente de la vidéo
-print("⏳ Waiting for video...")
-status_url = f"https://api.colossyan.com/v1/video-generation/{video_id}"
+# Vérification de l'état
+print("⏳ Waiting for video to be ready...")
+status_url = f"https://app.colossyan.com/api/v1/video-generation-jobs/{video_id}"
 while True:
     status_res = requests.get(status_url, headers=headers).json()
     print("📡 Status:", status_res)
     if status_res.get("status") == "done":
-        video_url = status_res.get("download_url")
+        video_url = status_res["download_url"]
         print(f"🎉 Video ready: {video_url}")
         break
     elif status_res.get("status") == "failed":
@@ -67,7 +77,7 @@ while True:
     time.sleep(5)
 
 # Téléchargement
-print("⬇️ Downloading...")
+print("⬇️ Downloading video...")
 video_data = requests.get(video_url)
 with open(local_path, "wb") as f:
     f.write(video_data.content)
@@ -77,7 +87,7 @@ print("☁️ Uploading to Supabase...")
 with open(local_path, "rb") as f:
     supabase.storage.from_(bucket).upload(path=filename, file=f, file_options={"upsert": True})
 
-# Mise à jour table
+# Mise à jour dans la base
 public_url = f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{filename}"
 supabase.table("nova_questions").update({ "video_question_fr": public_url }).eq("id", QUESTION_UUID).execute()
-print(f"✅ Video uploaded and saved for {QUESTION_UUID}")
+print(f"✅ Video uploaded and linked in Supabase for {QUESTION_UUID}")
