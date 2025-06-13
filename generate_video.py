@@ -28,7 +28,7 @@ question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Appel Colossyan avec videoSize
+# Appel Colossyan avec videoSize objet
 print("🎬 Sending to Colossyan (final structure)...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
@@ -56,7 +56,9 @@ payload = {
             "subtitles": False,
             "videoLayout": "face",
             "padding": "none",
-            "videoSize": "square"
+            "videoSize": {
+                "type": "square"
+            }
         }
     }
 }
