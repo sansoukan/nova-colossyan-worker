@@ -28,14 +28,13 @@ question = data.data or {}
 text_fr = question.get("question_fr") or ""
 print(f"🎤 Question: {text_fr}")
 
-# Envoi à Colossyan (payload complet façon Studio)
-print("🎬 Sending to Colossyan (Studio-style payload)...")
+# Envoi à Colossyan avec videoCreative.settings
+print("🎬 Sending to Colossyan (with settings)...")
 url = "https://app.colossyan.com/api/v1/video-generation-jobs"
 headers = {
     "Authorization": f"Bearer {COLOSSYAN_API_KEY}",
     "Content-Type": "application/json"
 }
-
 payload = {
     "title": f"Nova - {QUESTION_UUID}",
     "script": {
@@ -52,7 +51,7 @@ payload = {
         "background": {
             "color": "#ffffff"
         },
-        "config": {
+        "settings": {
             "resolution": "720p",
             "subtitles": False,
             "videoLayout": "face",
@@ -71,7 +70,6 @@ res_json = response.json()
 video_id = res_json.get("id")
 if not video_id:
     raise Exception("❌ No video ID returned from Colossyan.")
-
 print(f"✅ Video Job ID: {video_id}")
 
 # Suivi du job
